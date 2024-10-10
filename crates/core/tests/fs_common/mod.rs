@@ -286,3 +286,171 @@ impl ObjectStore for SlowStore {
         self.inner.put_multipart_opts(location, options).await
     }
 }
+
+
+#[derive(Debug)]
+pub struct PrintStore {
+    inner: Arc<dyn ObjectStore>,
+}
+impl std::fmt::Display for PrintStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl PrintStore {
+    #[allow(dead_code)]
+    pub fn new(
+        location: Url,
+        _options: impl Into<deltalake_core::storage::StorageOptions> + Clone,
+    ) -> deltalake_core::DeltaResult<Self> {
+        Ok(Self {
+            inner: deltalake_core::storage::store_for(&location, &StorageOptions::default())?,
+        })
+    }
+}
+
+#[async_trait::async_trait]
+impl ObjectStore for PrintStore {
+    /// Save the provided bytes to the specified location.
+    async fn put(&self, location: &StorePath, bytes: PutPayload) -> ObjectStoreResult<PutResult> {
+        println!("PrintStore::put");
+        self.inner.put(location, bytes).await
+    }
+
+    async fn put_opts(
+        &self,
+        location: &StorePath,
+        bytes: PutPayload,
+        options: PutOptions,
+    ) -> ObjectStoreResult<PutResult> {
+        println!("PrintStore::put_opts");
+        self.inner.put_opts(location, bytes, options).await
+    }
+
+    /// Return the bytes that are stored at the specified location.
+    async fn get(&self, location: &StorePath) -> ObjectStoreResult<GetResult> {
+        // println!("Backtrace:\n{:?}", Backtrace::capture());
+        println!("PrintStore::get: location: {:?}", location);
+        self.inner.get(location).await
+    }
+
+    /// Perform a get request with options
+    ///
+    /// Note: options.range will be ignored if [`GetResult::File`]
+    async fn get_opts(
+        &self,
+        location: &StorePath,
+        options: object_store::GetOptions,
+    ) -> ObjectStoreResult<GetResult> {
+        println!("PrintStore::get_opts: location: {:?}, options: {:?}", location, options);
+        self.inner.get_opts(location, options).await
+    }
+
+    /// Return the bytes that are stored at the specified location
+    /// in the given byte range
+    async fn get_range(
+        &self,
+        location: &StorePath,
+        range: std::ops::Range<usize>,
+    ) -> ObjectStoreResult<bytes::Bytes> {
+        println!("PrintStore::get_range: location: {:?}, range: {:?}", location, range);
+        self.inner.get_range(location, range).await
+    }
+
+    /// Return the metadata for the specified location
+    async fn head(&self, location: &StorePath) -> ObjectStoreResult<object_store::ObjectMeta> {
+        println!("PrintStore::head");
+        self.inner.head(location).await
+    }
+
+    /// Delete the object at the specified location.
+    async fn delete(&self, location: &StorePath) -> ObjectStoreResult<()> {
+        println!("PrintStore::delete");
+        self.inner.delete(location).await
+    }
+
+    /// List all the objects with the given prefix.
+    ///
+    /// Prefixes are evaluated on a path segment basis, i.e. `foo/bar/` is a prefix of `foo/bar/x` but not of
+    /// `foo/bar_baz/x`.
+    fn list(
+        &self,
+        prefix: Option<&StorePath>,
+    ) -> futures::stream::BoxStream<'_, ObjectStoreResult<object_store::ObjectMeta>> {
+        println!("PrintStore::list");
+        self.inner.list(prefix)
+    }
+
+    /// List all the objects with the given prefix and a location greater than `offset`
+    ///
+    /// Some stores, such as S3 and GCS, may be able to push `offset` down to reduce
+    /// the number of network requests required
+    fn list_with_offset(
+        &self,
+        prefix: Option<&StorePath>,
+        offset: &StorePath,
+    ) -> futures::stream::BoxStream<'_, ObjectStoreResult<object_store::ObjectMeta>> {
+        println!("PrintStore::list_with_offset");
+        self.inner.list_with_offset(prefix, offset)
+    }
+
+    /// List objects with the given prefix and an implementation specific
+    /// delimiter. Returns common prefixes (directories) in addition to object
+    /// metadata.
+    ///
+    /// Prefixes are evaluated on a path segment basis, i.e. `foo/bar/` is a prefix of `foo/bar/x` but not of
+    /// `foo/bar_baz/x`.
+    async fn list_with_delimiter(
+        &self,
+        prefix: Option<&StorePath>,
+    ) -> ObjectStoreResult<object_store::ListResult> {
+        println!("PrintStore::list_with_delimiter");
+        self.inner.list_with_delimiter(prefix).await
+    }
+
+    /// Copy an object from one path to another in the same object store.
+    ///
+    /// If there exists an object at the destination, it will be overwritten.
+    async fn copy(&self, from: &StorePath, to: &StorePath) -> ObjectStoreResult<()> {
+        println!("PrintStore::copy");
+        self.inner.copy(from, to).await
+    }
+
+    /// Copy an object from one path to another, only if destination is empty.
+    ///
+    /// Will return an error if the destination already has an object.
+    async fn copy_if_not_exists(&self, from: &StorePath, to: &StorePath) -> ObjectStoreResult<()> {
+        println!("PrintStore::copy_if_not_exists");
+        self.inner.copy_if_not_exists(from, to).await
+    }
+
+    /// Move an object from one path to another in the same object store.
+    ///
+    /// Will return an error if the destination already has an object.
+    async fn rename_if_not_exists(
+        &self,
+        from: &StorePath,
+        to: &StorePath,
+    ) -> ObjectStoreResult<()> {
+        println!("PrintStore::rename_if_not_exists");
+        self.inner.rename_if_not_exists(from, to).await
+    }
+
+    async fn put_multipart(
+        &self,
+        location: &StorePath,
+    ) -> ObjectStoreResult<Box<dyn MultipartUpload>> {
+        println!("PrintStore::put_multipart");
+        self.inner.put_multipart(location).await
+    }
+
+    async fn put_multipart_opts(
+        &self,
+        location: &StorePath,
+        options: PutMultipartOpts,
+    ) -> ObjectStoreResult<Box<dyn MultipartUpload>> {
+        println!("PrintStore::put_multipart_opts");
+        self.inner.put_multipart_opts(location, options).await
+    }
+}

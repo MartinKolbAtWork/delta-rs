@@ -6,6 +6,27 @@ use std::time::SystemTime;
 #[allow(dead_code)]
 mod fs_common;
 
+#[tokio::test] 
+async fn test_load_table_read_delta_log() {
+    let path = "../test/tests/data/simple_table";
+    // let path = "../test/tests/data/simple_table_with_checkpoint";
+    let location = deltalake_core::table::builder::ensure_table_uri(path).unwrap();
+    // use storage that sleeps 10ms on every `get`
+    let store = std::sync::Arc::new(
+        fs_common::PrintStore::new(
+            location.clone(),
+            deltalake_core::storage::StorageOptions::from(HashMap::new()),
+        )
+        .unwrap(),
+    );
+    let table = DeltaTableBuilder::from_uri(path)
+        .with_storage_backend(store.clone(), location.clone())
+        .load()
+        .await
+        .expect("Failed to load table");
+    println!("{:?}", table);
+}
+
 #[tokio::test]
 async fn test_log_buffering() {
     let n_commits = 10;

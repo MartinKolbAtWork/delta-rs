@@ -369,13 +369,16 @@ impl EagerSnapshot {
             .iter()
             .flat_map(get_visitor)
             .collect::<Vec<_>>();
+        println!("Starting Snapshot::try_new");
         let snapshot =
             Snapshot::try_new(table_root, store.clone(), config.clone(), version).await?;
 
+        println!("Starting snapshot.files");
         let files = match config.require_files {
             true => snapshot.files(store, &mut visitors)?.try_collect().await?,
             false => vec![],
         };
+        println!("Finished");
 
         let mut sn = Self {
             snapshot,
